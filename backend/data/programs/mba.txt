@@ -1,0 +1,16 @@
+PROGRAM: MBA
+DURATION: 2 Years
+CATEGORY: Program
+
+MBA programs are offered in Finance, Marketing, HR, Operations, and Analytics.
+
+Eligibility:
+- Bachelor’s degree with 50%
+- Entrance test/interview
+
+Fee:
+- ₹2,80,000 – ₹3,90,000 per year
+
+Placements:
+- Average Package: ₹6 LPA
+- Highest Package: ₹12 LPA

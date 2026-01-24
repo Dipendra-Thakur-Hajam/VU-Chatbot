@@ -1,0 +1,8 @@
+CATEGORY: Placements
+
+B.Tech CSE: ₹5 LPA  
+MBA: ₹6 LPA  
+M.Sc Data Science: ₹5 LPA  
+BBA: ₹3 LPA  
+B.Des: ₹4 LPA  
+PhD: ₹6 LPA

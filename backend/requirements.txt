@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+requests
+PyMuPDF
+numpy
+langchain
+langchain-community
+langchain-core
+faiss-cpu
+python-multipart
