@@ -23,20 +23,24 @@ def chat(req: ChatRequest):
         raise HTTPException(status_code=503, detail="Granite service unavailable")
 
     try:
-        context = retrieve_context(req.question)
+        result = retrieve_context(req.question)
+        context = result.get("context", "")
+        sources = result.get("sources", [])
     except Exception as e:
         logger.error(f"Error retrieving context: {e}")
         context = "No context available due to an internal error."
+        sources = []
 
     prompt = f"""
-You are a helpful and friendly college admission assistant for VU (Virtual University).
-Your goal is to assist students with admissions, programs, fees, and campus life queries.
+You are a helpful and friendly college admission assistant for Vishwakarma University (VU).
+Your goal is to assist students and parents with admissions, programs, fees, and campus life queries.
 
 Instructions:
 1. Answer strictly using the context provided below.
-2. If the context does not contain the answer, politely say currently you don't have that information.
-3. Keep the tone professional yet welcoming.
+2. If the context does not contain the answer, politely say you don't have that information.
+3. Keep the tone professional yet welcoming and student-friendly.
 4. Format your answer using Markdown (e.g., bullet points, bold text) for readability.
+5. Be concise but informative.
 
 Context:
 {context}
@@ -55,5 +59,5 @@ Answer:
 
     return {
         "answer": answer,
-        "sources": context
+        "sources": sources
     }

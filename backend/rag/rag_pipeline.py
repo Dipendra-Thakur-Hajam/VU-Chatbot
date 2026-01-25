@@ -3,7 +3,8 @@ from backend.granite.granite_client import granite_embeddings
 
 
 def answer_question(question: str) -> str:
-    context = retrieve_context(question)
+    result = retrieve_context(question)
+    context = result.get("context", "") if isinstance(result, dict) else result
 
     if not context.strip():
         return "I don't have enough information to answer that."

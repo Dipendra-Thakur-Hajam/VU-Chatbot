@@ -5,9 +5,15 @@ export interface Message {
   content: string;
 }
 
+export interface Source {
+  category: string;
+  filename: string;
+  snippet: string;
+}
+
 export interface ChatResponse {
   answer: string;
-  sources: string;
+  sources: Source[];
 }
 
 const API_URL = "http://localhost:8000/api/chat";
