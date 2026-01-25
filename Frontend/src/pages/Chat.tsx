@@ -2,9 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, StopCircle, Menu } from "lucide-react";
 import Layout from "../components/Layout";
 import ChatMessage from "../components/ChatMessage";
-import UniversityLogo from "../components/UniversityLogo";
 import Sidebar from "../components/Sidebar";
-import GraduationCapIcon from "../components/icons/GraduationCapIcon";
 import BookIcon from "../components/icons/BookIcon";
 import { sendMessage, submitFeedback } from "../services/chatService";
 import { useChatSessions } from "../hooks/useChatSessions";
@@ -31,11 +29,12 @@ export default function Chat() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const initializedRef = useRef(false);
 
   // Auto-scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeSession?.messages]);
+  }, [activeSession?.messages, isLoading]);
 
   // Check system dark mode preference
   useEffect(() => {
@@ -46,7 +45,8 @@ export default function Chat() {
 
   // Create first session if none exist
   useEffect(() => {
-    if (sessions.length === 0) {
+    if (!initializedRef.current && sessions.length === 0) {
+      initializedRef.current = true;
       const newSession = createSession();
       addMessage(WELCOME_MESSAGE);
     }
@@ -73,15 +73,16 @@ export default function Chat() {
     setIsLoading(true);
 
     try {
-      // Call API
+      // Use standard synchronous call - REVERTED FROM STREAMING
       const response = await sendMessage(userMsg);
 
-      // Add assistant response with sources
+      // Add assistant response
       addMessage({
         role: "assistant",
         content: response.answer,
         sources: response.sources || []
       });
+
     } catch (error) {
       addMessage({
         role: "assistant",
@@ -142,7 +143,11 @@ export default function Chat() {
                 <Menu className="w-5 h-5 text-[#0A2342] dark:text-[#E0C878]" />
               </button>
               <div className="flex items-center gap-3">
-                <GraduationCapIcon className="w-8 h-8 text-[#0A2342] dark:text-[#E0C878]" />
+                <img
+                  src="/vu-logo.png"
+                  alt="VU Logo"
+                  className="w-10 h-10 object-contain"
+                />
                 <div className="flex flex-col">
                   <span className="font-semibold text-[#0A2342] dark:text-[#E0C878] text-lg">VU Assistant</span>
                   <span className="text-xs text-gray-600 dark:text-gray-400">Vishwakarma University</span>
@@ -172,8 +177,9 @@ export default function Chat() {
                     <div className="w-10 h-10 bg-gradient-to-br from-[#0A2342] to-[#1B3A5F] dark:from-[#E0C878] dark:to-[#D4AF37] rounded-xl shrink-0 flex items-center justify-center animate-pulse shadow-md">
                       <BookIcon className="w-5 h-5 text-white dark:text-[#0A2342]" />
                     </div>
+                    {/* Always show Thinking... since we are back to full blocking load */}
                     <div className="flex items-center">
-                      <span className="animate-pulse text-[#0A2342] dark:text-[#E0C878] font-medium">Searching knowledge base...</span>
+                      <span className="animate-pulse text-[#0A2342] dark:text-[#E0C878] font-medium">Thinking...</span>
                     </div>
                   </div>
                 </div>

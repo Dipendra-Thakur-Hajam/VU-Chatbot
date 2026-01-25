@@ -42,15 +42,8 @@ export function useChatSessions() {
         activeSessionId: null,
     });
 
-    const [activeSession, setActiveSession] = useState<ChatSession | null>(() => {
-        return data.sessions.find(s => s.id === data.activeSessionId) || null;
-    });
-
-    // Sync activeSession with localStorage changes
-    useEffect(() => {
-        const session = data.sessions.find(s => s.id === data.activeSessionId);
-        setActiveSession(session || null);
-    }, [data.activeSessionId, data.sessions]);
+    // Derive activeSession directly from data
+    const activeSession = data.sessions.find(s => s.id === data.activeSessionId) || null;
 
     // Create new session
     const createSession = useCallback(() => {
@@ -66,32 +59,34 @@ export function useChatSessions() {
             sessions: [newSession, ...prev.sessions],
             activeSessionId: newSession.id,
         }));
-        setActiveSession(newSession);
         return newSession;
     }, [setData]);
 
     // Switch session
     const switchSession = useCallback((sessionId: string) => {
-        const session = data.sessions.find(s => s.id === sessionId);
-        if (session) {
-            setData(prev => ({ ...prev, activeSessionId: sessionId }));
-            setActiveSession(session);
-        }
-    }, [data.sessions, setData]);
+        setData(prev => {
+            const session = prev.sessions.find(s => s.id === sessionId);
+            if (session) {
+                return { ...prev, activeSessionId: sessionId };
+            }
+            return prev;
+        });
+    }, [setData]);
 
     // Add message to active session
     const addMessage = useCallback((message: Omit<Message, 'id' | 'createdAt'>) => {
+        const id = generateId();
+        const newMessage: Message = {
+            ...message,
+            id,
+            createdAt: Date.now(),
+        };
+
         setData(prev => {
             if (!prev.activeSessionId) return prev;
 
             const existingSession = prev.sessions.find(s => s.id === prev.activeSessionId);
-            if (!existingSession) return prev; // Should not happen
-
-            const newMessage: Message = {
-                ...message,
-                id: generateId(),
-                createdAt: Date.now(),
-            };
+            if (!existingSession) return prev;
 
             const updatedSession = {
                 ...existingSession,
@@ -110,9 +105,11 @@ export function useChatSessions() {
                 ),
             };
         });
+
+        return newMessage;
     }, [setData]);
 
-    // Update message (for feedback)
+    // Update message (for feedback or streaming updates)
     const updateMessage = useCallback((messageId: string, updates: Partial<Message>) => {
         setData(prev => {
             if (!prev.activeSessionId) return prev;
@@ -120,11 +117,16 @@ export function useChatSessions() {
             const existingSession = prev.sessions.find(s => s.id === prev.activeSessionId);
             if (!existingSession) return prev;
 
+            // Check if update is actually needed (optimization for streaming)
+            const msgIndex = existingSession.messages.findIndex(m => m.id === messageId);
+            if (msgIndex === -1) return prev;
+
+            const updatedMessages = [...existingSession.messages];
+            updatedMessages[msgIndex] = { ...updatedMessages[msgIndex], ...updates };
+
             const updatedSession = {
                 ...existingSession,
-                messages: existingSession.messages.map(m =>
-                    m.id === messageId ? { ...m, ...updates } : m
-                ),
+                messages: updatedMessages,
                 updatedAt: Date.now(),
             };
 
@@ -141,21 +143,19 @@ export function useChatSessions() {
     const deleteSession = useCallback((sessionId: string) => {
         setData(prev => {
             const newSessions = prev.sessions.filter(s => s.id !== sessionId);
-            const newActiveId = sessionId === prev.activeSessionId
-                ? (newSessions[0]?.id || null)
-                : prev.activeSessionId;
+            // If deleting active session, switch to the first available one or null
+            let newActiveId = prev.activeSessionId;
+
+            if (sessionId === prev.activeSessionId) {
+                newActiveId = newSessions.length > 0 ? newSessions[0].id : null;
+            }
 
             return {
                 sessions: newSessions,
                 activeSessionId: newActiveId,
             };
         });
-
-        if (sessionId === activeSession?.id && data.sessions.length > 1) {
-            const nextSession = data.sessions.find(s => s.id !== sessionId);
-            setActiveSession(nextSession || null);
-        }
-    }, [activeSession, data.sessions, setData]);
+    }, [setData]);
 
     // Rename session
     const renameSession = useCallback((sessionId: string, newTitle: string) => {
@@ -165,11 +165,7 @@ export function useChatSessions() {
                 s.id === sessionId ? { ...s, title: newTitle, updatedAt: Date.now() } : s
             ),
         }));
-
-        if (activeSession?.id === sessionId) {
-            setActiveSession(prev => prev ? { ...prev, title: newTitle } : null);
-        }
-    }, [activeSession, setData]);
+    }, [setData]);
 
     return {
         sessions: data.sessions,

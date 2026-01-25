@@ -94,7 +94,8 @@ class GraniteClient:
             "project_id": self.project_id,
             "parameters": {
                 "temperature": 0.2,
-                "max_new_tokens": 400
+                "max_new_tokens": 400,
+                "stop_sequences": ["\nQuestion:", "\nUser:", "Question:"]
             }
         }
 
@@ -109,7 +110,59 @@ class GraniteClient:
         )
 
         response.raise_for_status()
-        return response.json()["results"][0]["generated_text"]
+        text = response.json()["results"][0]["generated_text"]
+        
+        # Clean up response artifacts
+        for stop_seq in ["User Question:", "Question:", "\nUser:", "\nQuestion:"]:
+            if stop_seq in text:
+                text = text.split(stop_seq)[0]
+                
+        return text.strip()
+
+    def generate_chat_stream(self, prompt: str):
+        """
+        Generator function that streams tokens from IBM WatsonX
+        """
+        token = self._get_iam_token()
+        
+        payload = {
+            "model_id": settings.GRANITE_CHAT_MODEL,
+            "input": prompt,
+            "project_id": self.project_id,
+            "parameters": {
+                "temperature": 0.2,
+                "max_new_tokens": 400,
+                "stop_sequences": ["\nQuestion:", "\nUser:", "Question:"]
+            }
+        }
+
+        with requests.post(
+            f"{self.base_url}/ml/v1/text/generation_stream?version=2024-05-01",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream"
+            },
+            json=payload,
+            stream=True,
+            timeout=60
+        ) as response:
+            response.raise_for_status()
+            
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode("utf-8")
+                    if decoded_line.startswith("data:"):
+                        import json
+                        try:
+                            data = json.loads(decoded_line[5:])
+                            results = data.get("results", [])
+                            if results:
+                                chunk = results[0].get("generated_text", "")
+                                if chunk:
+                                    yield chunk
+                        except:
+                            continue
 
 
 # Backward compatibility

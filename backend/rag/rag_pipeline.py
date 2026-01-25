@@ -9,18 +9,18 @@ def answer_question(question: str) -> str:
     if not context.strip():
         return "I don't have enough information to answer that."
 
-    prompt = f"""
-You are a college admission assistant.
-Answer ONLY using the context below.
-If the answer is not in the context, say you don't know.
+    prompt = f"""You are a helpful and professional admission assistant for Vishwakarma University.
+Your task is to answer the user's question based ONLY on the provided context.
+Answer directly and concisely. Do not make up new questions or answers.
+If the answer is not in the context, politely state that you don't have that information.
 
+---
 Context:
 {context}
+---
 
-Question:
-{question}
+User Question: {question}
 
-Answer:
-"""
+Assistant Answer:"""
 
     return granite_embeddings.generate_chat_response(prompt)
