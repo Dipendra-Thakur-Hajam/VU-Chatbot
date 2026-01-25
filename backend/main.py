@@ -15,6 +15,7 @@ from backend.api.query import router as query_router
 from backend.api.ingest import router as ingest_router
 from backend.api.admin import router as admin_router
 from backend.api.chat import router as chat_router
+from backend.api.feedback import router as feedback_router
 
 
 # ✅ CREATE APP ONCE
@@ -38,6 +39,7 @@ app.include_router(query_router, prefix="/api", tags=["Query"])
 app.include_router(ingest_router, prefix="/api", tags=["Ingest"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])
 app.include_router(chat_router, prefix="/api", tags=["Chat"])
+app.include_router(feedback_router, prefix="/api", tags=["Feedback"])
 
 
 @app.get("/")

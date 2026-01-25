@@ -1,5 +1,6 @@
-import { User, Bot, Copy, ThumbsUp, ThumbsDown } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
+import { User, Bot, Copy, ThumbsUp, ThumbsDown, Check } from "lucide-react";
+import { useState } from "react";
+import TypewriterText from './TypewriterText';
 import SourceCitation from './SourceCitation';
 
 type Source = {
@@ -12,10 +13,40 @@ type ChatMessageProps = {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  messageId?: string;
+  feedback?: 'like' | 'dislike';
+  onFeedback?: (messageId: string, type: 'like' | 'dislike') => void;
+  isLatest?: boolean;
 };
 
-export default function ChatMessage({ role, content, sources }: ChatMessageProps) {
+export default function ChatMessage({ 
+  role, 
+  content, 
+  sources,
+  messageId,
+  feedback,
+  onFeedback,
+  isLatest = false
+}: ChatMessageProps) {
   const isUser = role === "user";
+  const [copied, setCopied] = useState(false);
+  const [showFullText, setShowFullText] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleFeedback = (type: 'like' | 'dislike') => {
+    if (messageId && onFeedback) {
+      onFeedback(messageId, feedback === type ? null as any : type);
+    }
+  };
 
   return (
     <div
@@ -45,7 +76,15 @@ export default function ChatMessage({ role, content, sources }: ChatMessageProps
                  <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">{content}</p>
              ) : (
                 <div className="text-gray-800 dark:text-gray-200">
-                  <ReactMarkdown>{content}</ReactMarkdown>
+                  {isLatest && !showFullText ? (
+                    <TypewriterText 
+                      text={content} 
+                      speed={30}
+                      onComplete={() => setShowFullText(true)}
+                    />
+                  ) : (
+                    <TypewriterText text={content} speed={0} />
+                  )}
                 </div>
              )}
           </div>
@@ -58,13 +97,29 @@ export default function ChatMessage({ role, content, sources }: ChatMessageProps
            {/* Actions for Assistant */}
            {!isUser && (
             <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-1.5 rounded-md hover:bg-white/50 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
-                    <Copy className="w-4 h-4" />
+                <button 
+                  onClick={handleCopy}
+                  className="p-1.5 rounded-md hover:bg-white/50 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  title="Copy message"
+                >
+                  {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                 </button>
-                 <button className="p-1.5 rounded-md hover:bg-white/50 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                 <button 
+                   onClick={() => handleFeedback('like')}
+                   className={`p-1.5 rounded-md hover:bg-white/50 dark:hover:bg-gray-700 transition-colors ${
+                     feedback === 'like' ? 'text-green-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-200'
+                   }`}
+                   title="Good response"
+                 >
                     <ThumbsUp className="w-4 h-4" />
                 </button>
-                 <button className="p-1.5 rounded-md hover:bg-white/50 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                 <button 
+                   onClick={() => handleFeedback('dislike')}
+                   className={`p-1.5 rounded-md hover:bg-white/50 dark:hover:bg-gray-700 transition-colors ${
+                     feedback === 'dislike' ? 'text-red-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-200'
+                   }`}
+                   title="Bad response"
+                 >
                     <ThumbsDown className="w-4 h-4" />
                 </button>
             </div>

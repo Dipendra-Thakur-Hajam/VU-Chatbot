@@ -37,3 +37,24 @@ export async function sendMessage(question: string): Promise<ChatResponse> {
   }
 }
 
+export async function submitFeedback(data: {
+  messageId: string;
+  feedbackType: 'like' | 'dislike';
+  question: string;
+  answer: string;
+}): Promise<void> {
+  try {
+    const res = await fetch("http://localhost:8000/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    if (!res.ok) {
+      console.error("Failed to submit feedback");
+    }
+  } catch (error) {
+    console.error("Error submitting feedback:", error);
+  }
+}
+
