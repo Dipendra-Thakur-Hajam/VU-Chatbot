@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "D:\VU-Chatbot\backend\test_vectorstore.py", line 11, in <module>
+    from backend.rag.retriever import retrieve_context
+  File "D:\VU-Chatbot\backend\rag\retriever.py", line 5, in <module>
+    vector_store = VectorStore()
+  File "D:\VU-Chatbot\backend\rag\vector_store.py", line 18, in __init__
+    self.store = FAISS.load_local(
+                 ~~~~~~~~~~~~~~~~^
+        self.index_path,
+        ^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        allow_dangerous_deserialization=True,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\dipen\AppData\Local\Programs\Python\Python313\Lib\site-packages\langchain_community\vectorstores\faiss.py", line 1205, in load_local
+    index = faiss.read_index(str(path / f"{index_name}.faiss"))
+  File "C:\Users\dipen\AppData\Local\Programs\Python\Python313\Lib\site-packages\faiss\swigfaiss_avx2.py", line 12913, in read_index
+    return _swigfaiss_avx2.read_index(*args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+RuntimeError: Error in struct faiss::Index *__cdecl faiss::read_index(struct faiss::IOReader *,int) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\index_read.cpp:727: Error: 'ret == (1)' failed: read error in data\VectorStore\index.faiss: 0 != 1 (No error)

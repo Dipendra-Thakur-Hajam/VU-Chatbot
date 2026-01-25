@@ -5,7 +5,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from backend.granite.granite_client import granite_embeddings
 
-VECTOR_DIR = Path("data/vector_index")
+VECTOR_DIR = Path("data/VectorStore")
 VECTOR_DIR.mkdir(parents=True, exist_ok=True)
 
 

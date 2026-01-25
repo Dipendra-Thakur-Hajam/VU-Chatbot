@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 
 export interface Source {
@@ -46,6 +46,12 @@ export function useChatSessions() {
         return data.sessions.find(s => s.id === data.activeSessionId) || null;
     });
 
+    // Sync activeSession with localStorage changes
+    useEffect(() => {
+        const session = data.sessions.find(s => s.id === data.activeSessionId);
+        setActiveSession(session || null);
+    }, [data.activeSessionId, data.sessions]);
+
     // Create new session
     const createSession = useCallback(() => {
         const newSession: ChatSession = {
@@ -75,53 +81,61 @@ export function useChatSessions() {
 
     // Add message to active session
     const addMessage = useCallback((message: Omit<Message, 'id' | 'createdAt'>) => {
-        if (!activeSession) return;
+        setData(prev => {
+            if (!prev.activeSessionId) return prev;
 
-        const newMessage: Message = {
-            ...message,
-            id: generateId(),
-            createdAt: Date.now(),
-        };
+            const existingSession = prev.sessions.find(s => s.id === prev.activeSessionId);
+            if (!existingSession) return prev; // Should not happen
 
-        const updatedSession = {
-            ...activeSession,
-            messages: [...activeSession.messages, newMessage],
-            updatedAt: Date.now(),
-            // Update title from first user message
-            title: activeSession.messages.length === 0 && message.role === 'user'
-                ? generateTitle(message.content)
-                : activeSession.title,
-        };
+            const newMessage: Message = {
+                ...message,
+                id: generateId(),
+                createdAt: Date.now(),
+            };
 
-        setData(prev => ({
-            ...prev,
-            sessions: prev.sessions.map(s =>
-                s.id === activeSession.id ? updatedSession : s
-            ),
-        }));
-        setActiveSession(updatedSession);
-    }, [activeSession, setData]);
+            const updatedSession = {
+                ...existingSession,
+                messages: [...existingSession.messages, newMessage],
+                updatedAt: Date.now(),
+                // Update title from first user message
+                title: existingSession.messages.length === 0 && message.role === 'user'
+                    ? generateTitle(message.content)
+                    : existingSession.title,
+            };
+
+            return {
+                ...prev,
+                sessions: prev.sessions.map(s =>
+                    s.id === prev.activeSessionId ? updatedSession : s
+                ),
+            };
+        });
+    }, [setData]);
 
     // Update message (for feedback)
     const updateMessage = useCallback((messageId: string, updates: Partial<Message>) => {
-        if (!activeSession) return;
+        setData(prev => {
+            if (!prev.activeSessionId) return prev;
 
-        const updatedSession = {
-            ...activeSession,
-            messages: activeSession.messages.map(m =>
-                m.id === messageId ? { ...m, ...updates } : m
-            ),
-            updatedAt: Date.now(),
-        };
+            const existingSession = prev.sessions.find(s => s.id === prev.activeSessionId);
+            if (!existingSession) return prev;
 
-        setData(prev => ({
-            ...prev,
-            sessions: prev.sessions.map(s =>
-                s.id === activeSession.id ? updatedSession : s
-            ),
-        }));
-        setActiveSession(updatedSession);
-    }, [activeSession, setData]);
+            const updatedSession = {
+                ...existingSession,
+                messages: existingSession.messages.map(m =>
+                    m.id === messageId ? { ...m, ...updates } : m
+                ),
+                updatedAt: Date.now(),
+            };
+
+            return {
+                ...prev,
+                sessions: prev.sessions.map(s =>
+                    s.id === prev.activeSessionId ? updatedSession : s
+                ),
+            };
+        });
+    }, [setData]);
 
     // Delete session
     const deleteSession = useCallback((sessionId: string) => {
