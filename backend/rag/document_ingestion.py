@@ -6,7 +6,7 @@ from backend.granite.granite_client import granite_embeddings
 from backend.rag.vector_store import VectorStore
 from backend.rag.chunking import chunk_text
 
-DATA_DIR = Path("data/processed")
+DATA_DIR = Path("backend/data")
 
 
 def ingest_document(file_path: str):

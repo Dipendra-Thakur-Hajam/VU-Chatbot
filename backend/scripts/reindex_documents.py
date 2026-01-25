@@ -1,7 +1,7 @@
 from pathlib import Path
 from backend.rag.document_ingestion import ingest_all_documents
 
-DATA_DIR = Path("data/processed")
+DATA_DIR = Path("backend/data")
 
 
 def run():

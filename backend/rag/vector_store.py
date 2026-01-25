@@ -3,6 +3,7 @@ from typing import List
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
+from backend.granite.granite_client import granite_embeddings
 
 VECTOR_DIR = Path("data/vector_index")
 VECTOR_DIR.mkdir(parents=True, exist_ok=True)
@@ -16,7 +17,7 @@ class VectorStore:
         if (self.index_path / "index.faiss").exists():
             self.store = FAISS.load_local(
                 self.index_path,
-                embeddings=None,
+                embeddings=granite_embeddings,
                 index_name=self.index_name,
                 allow_dangerous_deserialization=True,
             )
@@ -27,6 +28,7 @@ class VectorStore:
         if self.store is None:
             self.store = FAISS.from_documents(documents, embeddings)
         else:
+            self.store.embedding_function = embeddings
             self.store.add_documents(documents)
 
     def save(self):

@@ -1,5 +1,6 @@
 import time
 import requests
+from typing import List
 from backend.config import settings
 
 
@@ -72,7 +73,17 @@ class GraniteClient:
 
         response.raise_for_status()
 
-        return response.json()["data"][0]["embedding"]
+        # print("DEBUG RESPONSE:", response.text)
+        return response.json()["results"][0]["embedding"]
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.generate_embedding(text) for text in texts]
+
+    def embed_query(self, text: str) -> List[float]:
+        return self.generate_embedding(text)
+
+    def __call__(self, text: str) -> List[float]:
+        return self.embed_query(text)
 
     def generate_chat_response(self, prompt: str) -> str:
         token = self._get_iam_token()
