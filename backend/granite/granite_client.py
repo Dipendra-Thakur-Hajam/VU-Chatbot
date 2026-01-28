@@ -77,7 +77,52 @@ class GraniteClient:
         return response.json()["results"][0]["embedding"]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self.generate_embedding(text) for text in texts]
+        """
+        Batch embed multiple texts efficiently.
+        Groups requests to reduce API calls.
+        """
+        if not texts:
+            return []
+        
+        # Batch size to control memory and API limits
+        batch_size = 25
+        all_embeddings = []
+        
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            token = self._get_iam_token()
+            
+            payload = {
+                "model_id": settings.GRANITE_EMBEDDING_MODEL,
+                "inputs": batch,  # Send multiple texts at once
+                "project_id": self.project_id
+            }
+            
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}"
+            }
+            
+            try:
+                response = requests.post(
+                    self.embedding_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=60
+                )
+                response.raise_for_status()
+                
+                # Extract embeddings from batch response
+                results = response.json()["results"]
+                for result in results:
+                    all_embeddings.append(result["embedding"])
+            except Exception as e:
+                print(f"ERROR in batch embedding: {e}")
+                # Fallback to individual embedding
+                for text in batch:
+                    all_embeddings.append(self.generate_embedding(text))
+        
+        return all_embeddings
 
     def embed_query(self, text: str) -> List[float]:
         return self.generate_embedding(text)

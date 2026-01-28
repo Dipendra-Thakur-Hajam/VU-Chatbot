@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List
+import threading
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
@@ -10,10 +11,30 @@ VECTOR_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class VectorStore:
+    _instance = None
+    _lock = threading.Lock()
+    _store_cache = None
+    
+    def __new__(cls):
+        """Singleton pattern - only one VectorStore instance"""
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(VectorStore, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+    
     def __init__(self):
+        if self._initialized:
+            return
+            
         self.index_path = VECTOR_DIR
         self.index_name = "index"
+        self._load_store()
+        self._initialized = True
 
+    def _load_store(self):
+        """Load FAISS index from disk or cache it"""
         if (self.index_path / "index.faiss").exists():
             self.store = FAISS.load_local(
                 self.index_path,
@@ -41,6 +62,7 @@ class VectorStore:
         )
 
     def similarity_search(self, query: str, k: int = 4):
+        """Search with optimized parameters for faster retrieval"""
         if self.store is None:
             raise RuntimeError("FAISS index not initialized")
 
